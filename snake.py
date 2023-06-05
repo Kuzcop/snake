@@ -1,9 +1,9 @@
 class snake:
-    def __init__(self, pos_head, pos_tail, dir, body):
-        self.pos_head = (1,0)   # Measured in terms of sqaures
-        self.pos_tail = (0,0)   # Measured in terms of squares
-        self.dir      = 'right'
-        self.body     = [pos_head, pos_tail]
+    def __init__(self, pos_head = (1,0), pos_tail = (0,0), dir = 'right', body = [(1,0), (0,0)]):
+        self.pos_head = pos_head   # Measured in terms of sqaures
+        self.pos_tail = pos_tail   # Measured in terms of squares
+        self.dir      = dir
+        self.body     = body
 
     def get_head(self):
         return self.pos_head
