@@ -1,36 +1,55 @@
 class snake:
-    def __init__(self, pos_head = (1,0), pos_tail = (0,0), dir = 'right'):
-        self.pos_head = pos_head   # Measured in terms of sqaures
-        self.pos_tail = pos_tail   # Measured in terms of squares
-        self.dir      = dir
-        self.body     = [(1,0), (0,0)]
+    def __init__(self):
+        self.body = [[(1,0), 'right'], [(0,0),'right']]
 
     def get_head(self):
-        return self.pos_head
+        return self.body[0][0]
     
     def get_tail(self):
-        return self.pos_tail
+        return self.body[-1]
     
     def get_dir(self):
-        return self.dir
+        return self.body[0][1]
     
     def get_length(self):
         return len(self.body)
     
     def set_head(self, coordinate):
-        self.pos_head = coordinate
-        self.body[0] = self.get_head()
-
-    def set_tail(self, coordinate):
-        self.pos_tail = coordinate
+        self.body[0][0] = coordinate
 
     def set_dir(self, heading):
-        self.dir = heading
+        self.body[0][1] = heading
 
-    def update_body(self):
+    def move(self):
         for i in reversed(range(1, self.get_length())):
-            self.body[i] = self.body[i - 1]
-        self.set_tail = self.body[-1]
+            self.body[i][0] = self.body[i - 1][0]
+            self.body[i][1] = self.body[i - 1][1]
+
+    def grow_body(self):
+
+        curr_tail_pos = self.get_tail()[0]
+        curr_tail_dir = self.get_tail()[1]        
+
+        new_tail_pos = 0
+        new_tail_dir = curr_tail_dir
+
+        if curr_tail_dir == 'up':
+            new_tail_pos = (curr_tail_pos[0], curr_tail_pos[1] + 1)   
+        if curr_tail_dir == 'down':
+            new_tail_pos = (curr_tail_pos[0], curr_tail_pos[1] - 1)  
+        if curr_tail_dir == 'left':
+            new_tail_pos = (curr_tail_pos[0] + 1, curr_tail_pos[1])  
+        if curr_tail_dir == 'right':
+            new_tail_pos = (curr_tail_pos[0] - 1, curr_tail_pos[1])              
+
+        self.body.append([new_tail_pos, new_tail_dir])
+
+    def eat_body(self):
+        for i in range(1, self.get_length()):
+            if self.get_head() == self.body[i][0]:
+                return True
+        return False
+
 
     
 
