@@ -55,6 +55,9 @@ class snake:
             if coordinate == self.body[i][0]:
                 return True
         return False
+    
+    def reset(self):
+        self.body = [[(1,0), 'right'], [(0,0),'right']]
 
 
 

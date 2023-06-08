@@ -19,14 +19,16 @@ screen = pygame.display.set_mode(size)
 
 snk = snake()
 
-while True:
+still_running = True
+
+while still_running:
 
     pygame.time.delay(50)  
     clock.tick(10)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            break
+            still_running = False
 
     snk.move()
 
@@ -50,7 +52,8 @@ while True:
 
     # Check to see if snake head is going to hit a wall, end game if true
     if curr_head_pos[0] < 0 or curr_head_pos[0] == length_squares or curr_head_pos[1] < 0 or curr_head_pos[1] == length_squares:
-        break
+        snk.reset()
+        #break
 
     if curr_head_pos == apple_coordinate:
         snk.grow_body()
@@ -60,7 +63,8 @@ while True:
                 break
 
     if snk.eat_body():
-        break
+        snk.reset()
+        #break
 
 
     # Render
