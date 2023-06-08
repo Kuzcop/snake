@@ -49,6 +49,13 @@ class snake:
             if self.get_head() == self.body[i][0]:
                 return True
         return False
+    
+    def is_new_apple_in_body(self, coordinate):
+        for i in range(self.get_length()):
+            if coordinate == self.body[i][0]:
+                return True
+        return False
+
 
 
     

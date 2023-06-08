@@ -8,7 +8,7 @@ clock = pygame.time.Clock()
 
 x_max = 600
 y_max = 600
-length_squares = 10
+length_squares = 20
 line_width = 2
 square_size = math.floor(x_max / length_squares)
 
@@ -20,21 +20,17 @@ screen = pygame.display.set_mode(size)
 snk = snake()
 
 while True:
-    
+
+    pygame.time.delay(50)  
+    clock.tick(10)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             break
 
-    curr_head_pos = snk.get_head()
-
-    if snk.eat_body():
-        break
-
-    if curr_head_pos == apple_coordinate:
-        apple_coordinate = (random.randint(0, length_squares - 1), random.randint(0, length_squares - 1))
-        snk.grow_body()
-
     snk.move()
+
+    curr_head_pos = snk.get_head()
 
     keys = pygame.key.get_pressed()
     if (keys[pygame.K_UP] and not (snk.get_dir() == 'down')) or snk.get_dir() == 'up':
@@ -50,11 +46,22 @@ while True:
         snk.set_dir('right')
         snk.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))
 
-    new_head_pos = snk.get_head()
+    curr_head_pos = snk.get_head()
 
     # Check to see if snake head is going to hit a wall, end game if true
-    if new_head_pos[0] < 0 or new_head_pos[0] == length_squares or new_head_pos[1] < 0 or new_head_pos[1] == length_squares:
+    if curr_head_pos[0] < 0 or curr_head_pos[0] == length_squares or curr_head_pos[1] < 0 or curr_head_pos[1] == length_squares:
         break
+
+    if curr_head_pos == apple_coordinate:
+        snk.grow_body()
+        while True:
+            apple_coordinate = (random.randint(0, length_squares - 1), random.randint(0, length_squares - 1))
+            if not snk.is_new_apple_in_body(apple_coordinate):
+                break
+
+    if snk.eat_body():
+        break
+
 
     # Render
     screen.fill("black")
@@ -75,9 +82,6 @@ while True:
         pygame.draw.line(screen, 'white', [square_size*(i), 0], [square_size*(i), y_max], line_width)
         pygame.draw.line(screen, 'white', [0, square_size*(i)], [x_max, square_size*(i)], line_width)
 
-
     pygame.display.flip()
-
-    clock.tick(10)  # limits FPS to 60
 
 pygame.quit()
