@@ -1,6 +1,6 @@
 class snake:
     def __init__(self):
-        self.body = [[(1,0), 'right'], [(0,0),'right']]
+        self.body = [ [(0,0),'right']]
 
     def get_head(self):
         return self.body[0][0]
@@ -30,7 +30,7 @@ class snake:
         curr_tail_pos = self.get_tail()[0]
         curr_tail_dir = self.get_tail()[1]        
 
-        new_tail_pos = 0
+        new_tail_pos = (0,0)
         new_tail_dir = curr_tail_dir
 
         if curr_tail_dir == 'up':
@@ -57,7 +57,7 @@ class snake:
         return False
     
     def reset(self):
-        self.body = [[(1,0), 'right'], [(0,0),'right']]
+        self.body = [[(0,0),'right']]
 
 
 

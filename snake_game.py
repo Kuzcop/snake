@@ -23,7 +23,6 @@ still_running = True
 
 while still_running:
 
-    pygame.time.delay(50)  
     clock.tick(10)
 
     for event in pygame.event.get():
@@ -35,17 +34,23 @@ while still_running:
     curr_head_pos = snk.get_head()
 
     keys = pygame.key.get_pressed()
-    if (keys[pygame.K_UP] and not (snk.get_dir() == 'down')) or snk.get_dir() == 'up':
+    
+    if (keys[pygame.K_UP] and not (snk.get_dir() == 'down')):
         snk.set_dir('up')
-        snk.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
-    if (keys[pygame.K_DOWN] and not (snk.get_dir() == 'up')) or snk.get_dir() == 'down':
+    elif (keys[pygame.K_DOWN] and not (snk.get_dir() == 'up')):
         snk.set_dir('down')
-        snk.set_head((curr_head_pos[0], curr_head_pos[1] + 1))
-    if (keys[pygame.K_LEFT] and not (snk.get_dir() == 'right')) or snk.get_dir() == 'left':
+    elif (keys[pygame.K_LEFT] and not (snk.get_dir() == 'right')):
         snk.set_dir('left')
-        snk.set_head((curr_head_pos[0] - 1, curr_head_pos[1]))
-    if (keys[pygame.K_RIGHT] and not (snk.get_dir() == 'left')) or snk.get_dir() == 'right':
+    elif (keys[pygame.K_RIGHT] and not (snk.get_dir() == 'left')):
         snk.set_dir('right')
+
+    if snk.get_dir() == 'up':
+        snk.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
+    elif snk.get_dir() == 'down':
+        snk.set_head((curr_head_pos[0], curr_head_pos[1] + 1))
+    elif snk.get_dir() == 'left':
+        snk.set_head((curr_head_pos[0] - 1, curr_head_pos[1]))
+    elif snk.get_dir() == 'right':
         snk.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))
 
     curr_head_pos = snk.get_head()
