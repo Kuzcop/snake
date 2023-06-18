@@ -31,9 +31,12 @@ class SnakeEnv(gym.Env):
                 "apple": spaces.Box(0, size - 1, shape=(2,), dtype=int),
             })'''
         
-        self.observation_space = spaces.Tuple(
-                (spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))
-            )
+        self.observation_space = spaces.Dict(
+            {
+                'snake': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
+                'apple': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares)))
+            }
+        )
 
         # We have 4 actions, corresponding to "right", "up", "left", "down", "right"
         self.action_space = spaces.Discrete(4)
@@ -64,8 +67,7 @@ class SnakeEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        #return {"snake": self.snake.get_head(), "apple": self.apple}
-        return self.snake.get_head()
+        return {"snake": self.snake.get_head(), "apple": tuple(self.apple)}
 
     def _get_info(self):
         return {
@@ -83,7 +85,7 @@ class SnakeEnv(gym.Env):
 
         # We will sample the target's location randomly until it does not coincide with the agent's location
         while True:
-            self.apple = self.np_random.integers(0, self.length_squares, size=2, dtype=int)
+            self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
             if not self.snake.is_new_apple_in_body(self.apple):
                 break
 
@@ -97,8 +99,7 @@ class SnakeEnv(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        #return observation, info
-        return observation
+        return observation, info
 
     def step(self, action):
 
@@ -135,7 +136,7 @@ class SnakeEnv(gym.Env):
             reward = 5
             self.score = self.score + reward
             while True:
-                self.apple = self.np_random.integers(0, self.length_squares, size=2, dtype=int)
+                self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
                 if not self.snake.is_new_apple_in_body(self.apple):
                     break
         
