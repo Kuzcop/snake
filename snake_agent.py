@@ -38,6 +38,8 @@ class snakeAgent:
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
+        obs = (obs['snake'][0], obs['snake'][1],
+               obs['apple'][0], obs['apple'][1])
         # with probability epsilon return a random action to explore the environment
         if np.random.random() < self.epsilon:
             return env.action_space.sample()
@@ -55,6 +57,10 @@ class snakeAgent:
         next_obs,
     ):
         """Updates the Q-value of an action."""
+        obs      = (obs['snake'][0], obs['snake'][1],
+                    obs['apple'][0], obs['apple'][1])
+        next_obs = (next_obs['snake'][0], next_obs['snake'][1],
+                    next_obs['apple'][0], next_obs['apple'][1])
         future_q_value = (not terminated) * np.max(self.q_values[next_obs])
         temporal_difference = (
             reward + self.discount_factor * future_q_value - self.q_values[obs][action]
