@@ -20,7 +20,7 @@ def run_q_learning(size, is_training = True):
 
     # hyperparameters
     learning_rate = 0.01
-    n_episodes = 100_000
+    n_episodes = 200_000
     start_epsilon = 1.0
     epsilon_decay = start_epsilon / (n_episodes / 2)  # reduce the exploration over time
     final_epsilon = 0.1
@@ -79,7 +79,9 @@ def run_q_learning(size, is_training = True):
         env = SnakeEnv(render_mode=render_mode, size = size)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
 
-        for episode in tqdm(range(n_episodes)):
+        print(len(agent.q_values))
+
+        for episode in range(n_episodes):
             obs, info = env.reset()
             done = False
 
@@ -91,10 +93,12 @@ def run_q_learning(size, is_training = True):
                 # update if the environment is done and the current obs
                 done = terminated or truncated
                 obs = next_obs
+
+            print("Score: {}".format(env.score))
     
 
 if __name__ == "__main__":
     
-    run_q_learning(10, is_training=False)
+    run_q_learning(20, is_training = False)
 
     #run_SAC()

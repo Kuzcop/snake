@@ -34,30 +34,46 @@ class snakeAgent:
 
         self.q_values = defaultdict(create_zeroes_array)
 
-        self.lr = learning_rate
+        self.lr              = learning_rate
         self.discount_factor = discount_factor
+        self.epsilon         = initial_epsilon
+        self.epsilon_decay   = epsilon_decay
+        self.final_epsilon   = final_epsilon
+        self.training_error  = []
 
-        self.epsilon = initial_epsilon
-        self.epsilon_decay = epsilon_decay
-        self.final_epsilon = final_epsilon
-
-        self.training_error = []
+        self._action_to_direction = {
+            0: 'up',
+            1: 'down',
+            2: 'left',
+            3: 'right',
+        }
 
     def get_action(self, obs, env) -> int:
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
+
+        dir = obs['dir']
+
         obs = (obs['snake'][0], obs['snake'][1],
                obs['apple'][0], obs['apple'][1])
                 
-        # with probability epsilon return a random action to explore the environment
-        if np.random.random() < self.epsilon:
-            return env.action_space.sample()
+        while True:
 
-        # with probability (1 - epsilon) act greedily (exploit)
-        else:
-            return int(np.argmax(self.q_values[obs]))
+            # with probability epsilon return a random action to explore the environment
+            if np.random.random() < self.epsilon:
+                action = env.action_space.sample()
+
+            # with probability (1 - epsilon) act greedily (exploit)
+            else:
+                action = int(np.argmax(self.q_values[obs]))
+
+            chosen_direction = self._action_to_direction[action]
+            
+            if self.is_move_valid(dir, chosen_direction):
+                return action
+
 
     def update(
         self,
@@ -85,3 +101,15 @@ class snakeAgent:
 
     def decay_epsilon(self):
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
+        
+    def is_move_valid(self, action, dir):
+        if   (action == 'up' and (dir == 'down')):
+            return False
+        elif (action == 'down' and (dir == 'up')):
+            return False
+        elif (action == 'left' and (dir == 'right')):
+            return False
+        elif (action == 'right' and (dir == 'left')):
+            return False
+        else:
+                return True 

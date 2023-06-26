@@ -83,6 +83,8 @@ class SnakeEnv(gym.Env):
 
         #self.reset_apple()
 
+        self.score = 0         
+
         self.prev_distance = math.dist(self.snake.get_head(), self.apple)
 
         observation = self._get_obs()
@@ -101,35 +103,32 @@ class SnakeEnv(gym.Env):
 
         curr_head_pos = self.snake.get_head()
 
-        if (direction == 'up'):
-            self.snake.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
-        elif (direction == 'down'):
-            self.snake.set_head((curr_head_pos[0], curr_head_pos[1] + 1))
-        elif (direction == 'left'):
-            self.snake.set_head((curr_head_pos[0] - 1, curr_head_pos[1]))
-        elif (direction == 'right'):
-            self.snake.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))          
+        self.move_head(direction, curr_head_pos)
 
-
-        # Check to see if snake head is going to hit a wall, end game if true
+        # Check to see if snake head is going to hit a wall, end episode if true
         terminated = False
         reward = 0
 
-        if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
-            reward = -1
+        #if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
+        if self.snake.is_crashing_into_wall(self.length_squares):
+            reward = -10
+            terminated = True
+
+        elif self.snake.is_eating_body():
             terminated = True
 
         elif self.snake.is_eating_apple(self.apple):
             self.snake.grow_body()
-            reward = 1
+            self.score = self.score + 1
+            reward = 10
             self.reset_apple()
             self.prev_distance = self.dist_to_apple()
         
         elif self.prev_distance > self.dist_to_apple():
             self.prev_distance = self.dist_to_apple()
-            reward = 0.5
+            reward = 1
         else:
-            reward = -0.5
+            reward = -1
         
         if self.render_mode == "human":
             self._render_frame()
@@ -193,3 +192,17 @@ class SnakeEnv(gym.Env):
     
     def dist_to_apple(self):
         return math.dist(self.snake.get_head(), self.apple)
+    
+    def move_head(self, direction, curr_head_pos):
+        if (direction == 'up'):
+            self.snake.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
+            self.snake.set_dir('up')
+        elif (direction == 'down'):
+            self.snake.set_head((curr_head_pos[0], curr_head_pos[1] + 1))
+            self.snake.set_dir('down')
+        elif (direction == 'left'):
+            self.snake.set_head((curr_head_pos[0] - 1, curr_head_pos[1]))
+            self.snake.set_dir('left')
+        elif (direction == 'right'):
+            self.snake.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))
+            self.snake.set_dir('right')
