@@ -16,13 +16,10 @@ class SnakeEnv(gym.Env):
         self.length_squares = size
         self.line_width = 2
         self.square_size = math.floor(self.x_max / self.length_squares)
-
         self.score = 0
-        self.prev_distance = 1.5 * self.length_squares
-
         self.snake = snake()
         self.apple = (random.randint(1, self.length_squares - 1), random.randint(1, self.length_squares - 1))
-
+        self.prev_distance = self.dist_to_apple()
 
         # Observations are dictionaries with the agent's and the target's location.
         # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
@@ -34,11 +31,11 @@ class SnakeEnv(gym.Env):
         self.observation_space = spaces.Dict(
             {
                 'snake': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
-                'apple': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares)))
+                'apple': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
+                'dir'  : spaces.Discrete(4)
             }
         )
 
-        # We have 4 actions, corresponding to "right", "up", "left", "down", "right"
         self.action_space = spaces.Discrete(4)
 
         """
@@ -67,7 +64,9 @@ class SnakeEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {"snake": self.snake.get_head(), "apple": tuple(self.apple)}
+        return {"snake": self.snake.get_head(),
+                "apple": tuple(self.apple),
+                "dir"  : self.snake.get_dir()}
 
     def _get_info(self):
         return {
@@ -80,18 +79,11 @@ class SnakeEnv(gym.Env):
         # We need the following line to seed self.np_random
         super().reset(seed=seed)
 
-        # Choose the agent's location uniformly at random
-        #self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
-
-        # We will sample the target's location randomly until it does not coincide with the agent's location
-        while True:
-            self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
-            if not self.snake.is_new_apple_in_body(self.apple):
-                break
-
         self.snake.reset()
 
-        self.prev_distance = 1.5 * self.length_squares
+        #self.reset_apple()
+
+        self.prev_distance = math.dist(self.snake.get_head(), self.apple)
 
         observation = self._get_obs()
         info = self._get_info()
@@ -109,49 +101,41 @@ class SnakeEnv(gym.Env):
 
         curr_head_pos = self.snake.get_head()
 
-        if (direction == 'up' and not (self.snake.get_dir() == 'down')):
+        if (direction == 'up'):
             self.snake.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
-        elif (direction == 'down' and not (self.snake.get_dir() == 'up')):
+        elif (direction == 'down'):
             self.snake.set_head((curr_head_pos[0], curr_head_pos[1] + 1))
-        elif (direction == 'left' and not (self.snake.get_dir() == 'right')):
+        elif (direction == 'left'):
             self.snake.set_head((curr_head_pos[0] - 1, curr_head_pos[1]))
-        elif (direction == 'right' and not (self.snake.get_dir() == 'left')):
-            self.snake.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))           
+        elif (direction == 'right'):
+            self.snake.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))          
 
-        curr_head_pos = self.snake.get_head()
 
         # Check to see if snake head is going to hit a wall, end game if true
         terminated = False
         reward = 0
-        if curr_head_pos[0] < 0 or curr_head_pos[0] == self.length_squares or curr_head_pos[1] < 0 or curr_head_pos[1] == self.length_squares:
+
+        if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
             reward = -1
             terminated = True
 
-        elif self.snake.eat_body():
-            reward = -1
-            terminated = True
-
-        elif (np.array(curr_head_pos) == np.array(self.apple)).all():
+        elif self.snake.is_eating_apple(self.apple):
             self.snake.grow_body()
-            reward = 5
-            self.score = self.score + reward
-            while True:
-                self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
-                if not self.snake.is_new_apple_in_body(self.apple):
-                    break
-        
-        if self.prev_distance > math.dist(curr_head_pos, self.apple):
-            self.prev_distance = math.dist(curr_head_pos, self.apple)
             reward = 1
-            self.score = self.score + reward
-        else:
-            reward = -1
+            self.reset_apple()
+            self.prev_distance = self.dist_to_apple()
         
-        observation = self._get_obs()
-        info = self._get_info()
-
+        elif self.prev_distance > self.dist_to_apple():
+            self.prev_distance = self.dist_to_apple()
+            reward = 0.5
+        else:
+            reward = -0.5
+        
         if self.render_mode == "human":
             self._render_frame()
+
+        observation = self._get_obs()
+        info = self._get_info()
 
         return observation, reward, terminated, False, info
 
@@ -200,3 +184,12 @@ class SnakeEnv(gym.Env):
         if self.window is not None:
             pygame.display.quit()
             pygame.quit()
+
+    def reset_apple(self):
+         while True:
+            self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
+            if not self.snake.is_new_apple_in_body(self.apple):
+                break
+    
+    def dist_to_apple(self):
+        return math.dist(self.snake.get_head(), self.apple)

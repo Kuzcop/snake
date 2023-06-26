@@ -2,7 +2,13 @@ from collections import defaultdict
 import numpy as np
 from snake_environment import SnakeEnv
 
+
+def create_zeroes_array():
+    return np.zeros(size_of_action_space)
+
 class snakeAgent:
+
+
     def __init__(
         self,
         learning_rate: float,
@@ -22,7 +28,11 @@ class snakeAgent:
             final_epsilon: The final epsilon value
             discount_factor: The discount factor for computing the Q-value
         """
-        self.q_values = defaultdict(lambda: np.zeros(env.action_space.n))
+
+        global size_of_action_space
+        size_of_action_space = env.action_space.n
+
+        self.q_values = defaultdict(create_zeroes_array)
 
         self.lr = learning_rate
         self.discount_factor = discount_factor
@@ -40,6 +50,7 @@ class snakeAgent:
         """
         obs = (obs['snake'][0], obs['snake'][1],
                obs['apple'][0], obs['apple'][1])
+                
         # with probability epsilon return a random action to explore the environment
         if np.random.random() < self.epsilon:
             return env.action_space.sample()
@@ -61,6 +72,7 @@ class snakeAgent:
                     obs['apple'][0], obs['apple'][1])
         next_obs = (next_obs['snake'][0], next_obs['snake'][1],
                     next_obs['apple'][0], next_obs['apple'][1])
+
         future_q_value = (not terminated) * np.max(self.q_values[next_obs])
         temporal_difference = (
             reward + self.discount_factor * future_q_value - self.q_values[obs][action]
