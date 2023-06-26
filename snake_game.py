@@ -11,6 +11,7 @@ y_max = 600
 length_squares = 20
 line_width = 2
 square_size = math.floor(x_max / length_squares)
+FPS = 10
 
 apple_coordinate = (random.randint(1, length_squares - 1), random.randint(1, length_squares - 1))
 
@@ -23,7 +24,7 @@ still_running = True
 
 while still_running:
 
-    clock.tick(10)
+    clock.tick(FPS)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -34,7 +35,7 @@ while still_running:
     curr_head_pos = snk.get_head()
 
     keys = pygame.key.get_pressed()
-    
+
     if (keys[pygame.K_UP] and not (snk.get_dir() == 'down')):
         snk.set_dir('up')
     elif (keys[pygame.K_DOWN] and not (snk.get_dir() == 'up')):
@@ -56,9 +57,8 @@ while still_running:
     curr_head_pos = snk.get_head()
 
     # Check to see if snake head is going to hit a wall, end game if true
-    if curr_head_pos[0] < 0 or curr_head_pos[0] == length_squares or curr_head_pos[1] < 0 or curr_head_pos[1] == length_squares:
+    if snk.is_crashing_into_wall(length_squares) or snk.is_eating_body():
         snk.reset()
-        #break
 
     if curr_head_pos == apple_coordinate:
         snk.grow_body()
@@ -66,11 +66,6 @@ while still_running:
             apple_coordinate = (random.randint(0, length_squares - 1), random.randint(0, length_squares - 1))
             if not snk.is_new_apple_in_body(apple_coordinate):
                 break
-
-    if snk.eat_body():
-        snk.reset()
-        #break
-
 
     # Render
     screen.fill("black")

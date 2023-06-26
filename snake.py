@@ -1,6 +1,9 @@
+import numpy as np
+
 class snake:
     def __init__(self):
-        self.body = [ [(0,0),'right']]
+        self.body = [[(0,0),'right']]
+        self.pos  = [(0,0)]
 
     def get_head(self):
         return self.body[0][0]
@@ -27,8 +30,7 @@ class snake:
 
     def grow_body(self):
 
-        curr_tail_pos = self.get_tail()[0]
-        curr_tail_dir = self.get_tail()[1]        
+        curr_tail_pos, curr_tail_dir = self.get_tail()       
 
         new_tail_pos = (0,0)
         new_tail_dir = curr_tail_dir
@@ -43,22 +45,31 @@ class snake:
             new_tail_pos = (curr_tail_pos[0] - 1, curr_tail_pos[1])              
 
         self.body.append([new_tail_pos, new_tail_dir])
+        self.pos.append((new_tail_pos))
 
-    def eat_body(self):
+    def is_eating_body(self):
         for i in range(1, self.get_length()):
-            if self.get_head() == self.body[i][0]:
+            if (np.array(self.get_head()) == np.array(self.body[i][0])).all():
                 return True
         return False
     
     def is_new_apple_in_body(self, coordinate):
         for i in range(self.get_length()):
-            if coordinate == self.body[i][0]:
+            if (np.array(coordinate) == np.array(self.body[i][0])).all():
                 return True
         return False
     
     def reset(self):
         self.body = [[(0,0),'right']]
+        self.pos  = [(0,0)]
 
+    def is_crashing_into_wall(self, length_squares):
+        curr_head_pos = self.get_head()
+        return curr_head_pos[0] < 0 or curr_head_pos[0] == length_squares or curr_head_pos[1] < 0 or curr_head_pos[1] == length_squares
+    
+    def is_eating_apple(self, apple):
+        curr_head_pos = self.get_head()
+        return (np.array(curr_head_pos) == np.array(apple)).all()
 
 
     
