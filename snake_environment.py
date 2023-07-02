@@ -8,7 +8,7 @@ from   gymnasium   import spaces
 
 class SnakeEnv(gym.Env):
 
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
 
     def __init__(self, render_mode=None, size=20):
         self.x_max = 600
@@ -36,7 +36,7 @@ class SnakeEnv(gym.Env):
             }
         )
 
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(3)
 
         """
         The following dictionary maps abstract actions from `self.action_space` to 
@@ -44,10 +44,26 @@ class SnakeEnv(gym.Env):
         I.e. 0 corresponds to "right", 1 to "up" etc.
         """
         self._action_to_direction = {
-            0: 'up',
-            1: 'down',
-            2: 'left',
-            3: 'right',
+            'up': {
+                0: 'left',
+                1: 'up',
+                2: 'right',
+            },
+            'down':{
+                0: 'right',
+                1: 'down',
+                2: 'left',
+            },
+            'left':{
+                0: 'down',
+                1: 'left',
+                2: 'up',
+            },
+            'right':{
+                0: 'up',
+                1: 'right',
+                2: 'down',
+            }
         }
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
@@ -81,7 +97,7 @@ class SnakeEnv(gym.Env):
 
         self.snake.reset()
 
-        #self.reset_apple()
+        self.reset_apple()
 
         self.score = 0         
 
@@ -97,18 +113,22 @@ class SnakeEnv(gym.Env):
 
     def step(self, action):
 
-        direction = self._action_to_direction[action]
+        curr_direction, new_direction = self.snake.get_dir(), action
+
+        #print('Curr {} New {}'.format(curr_direction, new_direction))
+        new_direction = self._action_to_direction[curr_direction][new_direction]
+        #print('New {}'.format(new_direction))
         
         self.snake.move()
 
         curr_head_pos = self.snake.get_head()
 
-        self.move_head(direction, curr_head_pos)
+        self.move_head(new_direction, curr_head_pos)
 
         # Check to see if snake head is going to hit a wall, end episode if true
         terminated = False
         reward = 0
-
+        
         #if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
         if self.snake.is_crashing_into_wall(self.length_squares):
             reward = -10
@@ -192,6 +212,10 @@ class SnakeEnv(gym.Env):
     
     def dist_to_apple(self):
         return math.dist(self.snake.get_head(), self.apple)
+    
+    def dist_to_center_of_mass(self):
+        c_of_m = self.snake.get_center_of_mass()
+        return math.dist(self.snake.get_head(), c_of_m)
     
     def move_head(self, direction, curr_head_pos):
         if (direction == 'up'):

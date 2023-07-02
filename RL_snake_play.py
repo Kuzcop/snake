@@ -18,15 +18,16 @@ def run_SAC(size):
 
 def run_q_learning(size, is_training = True):
 
-    # hyperparameters
-    learning_rate = 0.01
     n_episodes = 200_000
-    start_epsilon = 1.0
-    epsilon_decay = start_epsilon / (n_episodes / 2)  # reduce the exploration over time
-    final_epsilon = 0.1
 
     
     if is_training:
+
+        # hyperparameters
+        learning_rate = 0.01
+        start_epsilon = 1.0
+        epsilon_decay = start_epsilon / (n_episodes / 2)  # reduce the exploration over time
+        final_epsilon = 0.1
         
         render_mode = None
 
@@ -50,7 +51,7 @@ def run_q_learning(size, is_training = True):
 
             # play one episode
             while not done:
-                action = agent.get_action(obs, env)
+                action = agent.get_action(obs, env, is_training)
                 next_obs, reward, terminated, truncated, info = env.step(action)
 
                 # update the agent
@@ -79,15 +80,15 @@ def run_q_learning(size, is_training = True):
         env = SnakeEnv(render_mode=render_mode, size = size)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
 
-        print(len(agent.q_values))
-
+        #print(agent.q_values)
+    
         for episode in range(n_episodes):
             obs, info = env.reset()
             done = False
 
             # play one episode
             while not done:
-                action = agent.get_action(obs, env)
+                action = agent.get_action(obs, env, is_training)
                 next_obs, reward, terminated, truncated, info = env.step(action)
 
                 # update if the environment is done and the current obs
@@ -99,6 +100,6 @@ def run_q_learning(size, is_training = True):
 
 if __name__ == "__main__":
     
-    run_q_learning(20, is_training = False)
+    run_q_learning(10, is_training = False)
 
     #run_SAC()

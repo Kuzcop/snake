@@ -70,7 +70,17 @@ class snake:
     def is_eating_apple(self, apple):
         curr_head_pos = self.get_head()
         return (np.array(curr_head_pos) == np.array(apple)).all()
-
-
     
+    def get_center_of_mass(self):
+        x_total = 0
+        y_total = 0
+        length  = self.get_length()
 
+        for i in range(length):
+            x_total = x_total + self.body[i][0][0]
+            y_total = y_total + self.body[i][0][1]
+
+        x_avg = x_total/length
+        y_avg = y_total/length
+
+        return (x_avg, y_avg)

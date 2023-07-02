@@ -42,13 +42,13 @@ class snakeAgent:
         self.training_error  = []
 
         self._action_to_direction = {
-            0: 'up',
-            1: 'down',
-            2: 'left',
-            3: 'right',
+            'up':   0,
+            'down': 1,
+            'left': 2,
+            'right':3,
         }
 
-    def get_action(self, obs, env) -> int:
+    def get_action(self, obs, env, is_training = True):
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
@@ -57,22 +57,19 @@ class snakeAgent:
         dir = obs['dir']
 
         obs = (obs['snake'][0], obs['snake'][1],
-               obs['apple'][0], obs['apple'][1])
-                
-        while True:
+               obs['apple'][0], obs['apple'][1],
+               obs['dir'])
 
+        if is_training:
             # with probability epsilon return a random action to explore the environment
             if np.random.random() < self.epsilon:
-                action = env.action_space.sample()
+                return env.action_space.sample()
 
             # with probability (1 - epsilon) act greedily (exploit)
             else:
-                action = int(np.argmax(self.q_values[obs]))
-
-            chosen_direction = self._action_to_direction[action]
-            
-            if self.is_move_valid(dir, chosen_direction):
-                return action
+                return (np.argmax(self.q_values[obs]))
+        else:
+            return (np.argmax(self.q_values[obs]))
 
 
     def update(
@@ -83,12 +80,15 @@ class snakeAgent:
         terminated: bool,
         next_obs,
     ):
+
         """Updates the Q-value of an action."""
         obs      = (obs['snake'][0], obs['snake'][1],
-                    obs['apple'][0], obs['apple'][1])
+                    obs['apple'][0], obs['apple'][1],
+                    obs['dir'])
         next_obs = (next_obs['snake'][0], next_obs['snake'][1],
-                    next_obs['apple'][0], next_obs['apple'][1])
-
+                    next_obs['apple'][0], next_obs['apple'][1],
+                    next_obs['dir'])
+        
         future_q_value = (not terminated) * np.max(self.q_values[next_obs])
         temporal_difference = (
             reward + self.discount_factor * future_q_value - self.q_values[obs][action]
