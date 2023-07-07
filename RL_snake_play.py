@@ -2,27 +2,47 @@ from snake_agent import snakeAgent
 from snake_environment import SnakeEnv
 from tqdm import tqdm
 import gymnasium as gym
-from stable_baselines3.sac.policies import MlpPolicy
 from stable_baselines3 import SAC
+from stable_baselines3 import A2C
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import VecEnvWrapper 
 from snake_helper import training_evaluation
 import pickle
+import argparse
 
+def run_A2C(size, is_training = True):
+    n_episodes = 50_000
+    model = 'A2C'
+    
+    #env = VecEnvWrapper(env)
+    if is_training:
+        env = SnakeEnv(render_mode=None, size = size, model=model)
+        #env = make_vec_env(env, n_envs=1)
+        model = A2C("MultiInputPolicy", env, verbose=1)
+        model.learn(total_timesteps=n_episodes)
+        model.save("a2c_snake")
 
-def run_SAC(size):
-    env = SnakeEnv(render_mode=None, size = size)
-    #rl_agent = SAC.load("SAC", env, learning_rate=0.00007)
-    rl_agent = SAC("MlpPolicy", env, verbose=1, learning_rate=0.000001, learning_starts=1000)
-    rl_agent.learning_rate = 0.003 # Not needed
-    rl_agent.learn(total_timesteps=100000)
-    rl_agent.save("SAC_Learned")
+    else:
+        env = SnakeEnv(render_mode='human', size = size, model=model)
+        env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
+        model = A2C.load("a2c_snake")
+        obs = env.reset()      
+        for _ in range(n_episodes):
+            obs, info = env.reset()
+            done = False
+            # play one episode
+            while not done:
+                action, _states = model.predict(obs, deterministic=True)
+                obs, rewards, terminated, truncated, info = env.step(action)
+                # update if the environment is done and the current obs
+                done = terminated or truncated
+            print("Score: {}".format(env.score))
 
 def run_q_learning(size, is_training = True):
+    n_episodes = 100_000
+    model = 'q_learn'
 
-    n_episodes = 200_000
-
-    
     if is_training:
-
         # hyperparameters
         learning_rate = 0.01
         start_epsilon = 1.0
@@ -30,11 +50,8 @@ def run_q_learning(size, is_training = True):
         final_epsilon = 0.1
         
         render_mode = None
-
-        env = SnakeEnv(render_mode=render_mode, size = size)
+        env = SnakeEnv(render_mode=render_mode, size = size, model=model)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
-
-
         agent = snakeAgent(
             learning_rate=learning_rate,
             initial_epsilon=start_epsilon,
@@ -42,64 +59,53 @@ def run_q_learning(size, is_training = True):
             final_epsilon=final_epsilon,
             env=env
         )
-
-        counter = 0
-
         for episode in tqdm(range(n_episodes)):
             obs, info = env.reset()
             done = False
-
             # play one episode
             while not done:
                 action = agent.get_action(obs, env, is_training)
                 next_obs, reward, terminated, truncated, info = env.step(action)
-
                 # update the agent
                 agent.update(obs, action, reward, terminated, next_obs)
-
                 # update if the environment is done and the current obs
                 done = terminated or truncated
                 obs = next_obs
-
-                '''if counter > 0.1 * n_episodes:
-                    env._render_frame()'''
-
             agent.decay_epsilon()
-            counter  = counter + 1
 
         training_evaluation(env, agent)
-
         pickle.dump(agent, open('agent.pkl', 'wb'))
-    
     else:
-
         agent = pickle.load(open('agent.pkl', 'rb'))
-
         render_mode = 'human'
-
-        env = SnakeEnv(render_mode=render_mode, size = size)
+        env = SnakeEnv(render_mode=render_mode, size = size, model=model)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
-
-        #print(agent.q_values)
-    
-        for episode in range(n_episodes):
+        #print(len(agent.q_values))
+        for _ in range(n_episodes):
             obs, info = env.reset()
             done = False
-
-            # play one episode
             while not done:
                 action = agent.get_action(obs, env, is_training)
-                next_obs, reward, terminated, truncated, info = env.step(action)
-
+                obs, reward, terminated, truncated, info = env.step(action)
+                #print(info) #For debugging
                 # update if the environment is done and the current obs
                 done = terminated or truncated
-                obs = next_obs
-
             print("Score: {}".format(env.score))
-    
 
 if __name__ == "__main__":
-    
-    run_q_learning(10, is_training = False)
 
-    #run_SAC()
+    parser = argparse.ArgumentParser(description='A tutorial of argparse!')
+    parser.add_argument('--train', default=False, action='store_true')
+    parser.add_argument('--test' , dest='train', action='store_false')
+    parser.add_argument("-m", default = None, required = True, choices=["qlearn", "a2c"], help = "Specify model to be played")
+    parser.add_argument("-s", default = None, required = True, help = "Play areas are squares, specify length. Agent must be trained in a given play area to be tested later")
+
+    args = parser.parse_args()
+    t = args.train
+    m = args.m
+    s = int(args.s)
+
+    if m == 'qlearn':
+        run_q_learning(s, is_training = t)
+    else:
+        run_A2C(s, is_training = t)

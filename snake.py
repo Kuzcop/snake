@@ -80,7 +80,7 @@ class snake:
             x_total = x_total + self.body[i][0][0]
             y_total = y_total + self.body[i][0][1]
 
-        x_avg = x_total/length
-        y_avg = y_total/length
+        x_avg = np.round(x_total/length)
+        y_avg = np.round(y_total/length)
 
         return (x_avg, y_avg)

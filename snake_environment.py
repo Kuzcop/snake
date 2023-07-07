@@ -8,9 +8,9 @@ from   gymnasium   import spaces
 
 class SnakeEnv(gym.Env):
 
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 1}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 10}
 
-    def __init__(self, render_mode=None, size=20):
+    def __init__(self, render_mode=None, size=20, model = 'q_learn'):
         self.x_max = 600
         self.y_max = 600
         self.length_squares = size
@@ -19,7 +19,9 @@ class SnakeEnv(gym.Env):
         self.score = 0
         self.snake = snake()
         self.apple = (random.randint(1, self.length_squares - 1), random.randint(1, self.length_squares - 1))
-        self.prev_distance = self.dist_to_apple()
+        self.prev_distance_to_apple = self.dist_to_apple()
+        self.prev_distance_to_c_of_m = 0
+        self.model = model
 
         # Observations are dictionaries with the agent's and the target's location.
         # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
@@ -28,13 +30,28 @@ class SnakeEnv(gym.Env):
                 "apple": spaces.Box(0, size - 1, shape=(2,), dtype=int),
             })'''
         
-        self.observation_space = spaces.Dict(
-            {
-                'snake': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
-                'apple': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
-                'dir'  : spaces.Discrete(4)
-            }
-        )
+        if self.model == 'q_learn':
+            self.observation_space = spaces.Dict(
+                {
+                    'snake': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
+                    'apple': spaces.Tuple((spaces.Discrete(self.length_squares), spaces.Discrete(self.length_squares))),
+                    'quad_apple'  : spaces.Discrete(8),
+                    'quad_c_of_m'  : spaces.Discrete(9),
+                    'dir'  : spaces.Discrete(4),
+                    'quad_tail'  : spaces.Discrete(9)
+                }
+            )
+
+        else:
+            self.observation_space =  spaces.Dict(
+                {
+                    'snake'       : spaces.Box(-1, self.length_squares, shape=(2,), dtype=int),
+                    'apple'       : spaces.Box(-1, self.length_squares, shape=(2,), dtype=int),
+                    #'quad_apple'  : spaces.Discrete(8),
+                    #'quad_c_of_m' : spaces.Discrete(9),
+                    #'dir'         : spaces.Discrete(4)
+                }
+            )
 
         self.action_space = spaces.Discrete(3)
 
@@ -66,6 +83,20 @@ class SnakeEnv(gym.Env):
             }
         }
 
+        self.get_direction = {
+            0: 'up',
+            1: 'down',
+            2: 'left',
+            3: 'right'
+        }
+
+        self._head_direction = {
+            'up':    0,
+            'right': 1,
+            'down':  2,
+            'left':  3 
+        }
+
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
@@ -80,15 +111,24 @@ class SnakeEnv(gym.Env):
         self.clock = None
 
     def _get_obs(self):
-        return {"snake": self.snake.get_head(),
-                "apple": tuple(self.apple),
-                "dir"  : self.snake.get_dir()}
+        if self.model == 'q_learn':
+            return {
+                    "snake": self.snake.get_head(),
+                    "apple": tuple(self.apple),
+                    "quad_apple" : self.get_quadrant(self.apple),
+                    'quad_c_of_m': self.get_quadrant(self.snake.get_center_of_mass()),
+                    "dir"  : self._head_direction[self.snake.get_dir()],
+                    "quad_tail"  : self.get_quadrant(self.snake.get_tail()[0])
+                   }
+        else:
+            return {
+                    "snake": self.snake.get_head(),
+                    "apple": tuple(self.apple),
+                   }
 
     def _get_info(self):
         return {
-            "distance": np.linalg.norm(
-                np.array(self.snake.get_head()) - np.array(self.apple), ord=1
-            )
+            'quad_c_of_m': self.get_quadrant(self.snake.get_center_of_mass())
         }
 
     def reset(self, seed=None, options=None):
@@ -101,7 +141,8 @@ class SnakeEnv(gym.Env):
 
         self.score = 0         
 
-        self.prev_distance = math.dist(self.snake.get_head(), self.apple)
+        self.prev_distance_to_apple = math.dist(self.snake.get_head(), self.apple)
+        self.prev_distance_to_c_of_m = 0
 
         observation = self._get_obs()
         info = self._get_info()
@@ -115,46 +156,47 @@ class SnakeEnv(gym.Env):
 
         curr_direction, new_direction = self.snake.get_dir(), action
 
-        #print('Curr {} New {}'.format(curr_direction, new_direction))
-        new_direction = self._action_to_direction[curr_direction][new_direction]
-        #print('New {}'.format(new_direction))
+        new_direction = self._action_to_direction[curr_direction][int(new_direction)]
         
         self.snake.move()
 
         curr_head_pos = self.snake.get_head()
-
         self.move_head(new_direction, curr_head_pos)
 
         # Check to see if snake head is going to hit a wall, end episode if true
         terminated = False
         reward = 0
-        
+
         #if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
-        if self.snake.is_crashing_into_wall(self.length_squares):
-            reward = -10
+        if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
+            reward = -500
             terminated = True
-
-        elif self.snake.is_eating_body():
-            terminated = True
-
-        elif self.snake.is_eating_apple(self.apple):
-            self.snake.grow_body()
-            self.score = self.score + 1
-            reward = 10
-            self.reset_apple()
-            self.prev_distance = self.dist_to_apple()
-        
-        elif self.prev_distance > self.dist_to_apple():
-            self.prev_distance = self.dist_to_apple()
-            reward = 1
         else:
-            reward = -1
+            if self.snake.is_eating_apple(self.apple):
+                self.snake.grow_body()
+                self.score = self.score + 1
+                reward = 100
+                self.reset_apple()
+            else:
+                reward = -1
+                
+                if self.prev_distance_to_apple > self.dist_to_apple():
+                    reward =  0
+                '''
+                if self.prev_distance_to_c_of_m != 0:
+                    if self.prev_distance_to_c_of_m < self.dist_to_center_of_mass():
+                        reward = reward + 1
+                    else:
+                        reward = reward - 50'''
+
+        self.prev_distance_to_apple  = self.dist_to_apple()
+        self.prev_distance_to_c_of_m = self.dist_to_center_of_mass()
         
         if self.render_mode == "human":
             self._render_frame()
 
         observation = self._get_obs()
-        info = self._get_info()
+        info        = self._get_info()
 
         return observation, reward, terminated, False, info
 
@@ -183,6 +225,12 @@ class SnakeEnv(gym.Env):
             x = self.square_size*(self.snake.body[i][0][0])
             y = self.square_size*(self.snake.body[i][0][1])
             pygame.draw.rect(self.window, 'green', [x, y, self.square_size, self.square_size])
+
+        # Drawing cm
+        cm = self.snake.get_center_of_mass()
+        x = self.square_size*cm[0]
+        y = self.square_size*cm[1]
+        pygame.draw.rect(self.window, 'blue', [x, y, self.square_size, self.square_size])
 
         # Drawing grid play area
         for i in range(1,self.length_squares):
@@ -230,3 +278,26 @@ class SnakeEnv(gym.Env):
         elif (direction == 'right'):
             self.snake.set_head((curr_head_pos[0] + 1, curr_head_pos[1]))
             self.snake.set_dir('right')
+
+    def get_quadrant(self, target):
+        snake_head_x, snake_head_y = self.snake.get_head()
+        target_x     , target_y    = target
+
+        if   ((snake_head_x - target_x) == 0) and ((snake_head_y - target_y) < 0 ):
+            return 0
+        elif ((snake_head_x - target_x) > 0 ) and ((snake_head_y - target_y) < 0 ):
+            return 1
+        elif ((snake_head_x - target_x) > 0 ) and ((snake_head_y - target_y) == 0):
+            return 2
+        elif ((snake_head_x - target_x) > 0 ) and ((snake_head_y - target_y) > 0 ):
+            return 3
+        elif ((snake_head_x - target_x) == 0) and ((snake_head_y - target_y) > 0 ):
+            return 4
+        elif ((snake_head_x - target_x) < 0 ) and ((snake_head_y - target_y) > 0 ):
+            return 5
+        elif ((snake_head_x - target_x) < 0 ) and ((snake_head_y - target_y) == 0):
+            return 6
+        elif ((snake_head_x - target_x) < 0 ) and ((snake_head_y - target_y) < 0 ):
+            return 7
+        else:
+            return 8
