@@ -53,12 +53,11 @@ class snakeAgent:
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
-
-        '''obs = (obs['snake'][0], obs['snake'][1],
-               obs['apple'][0], obs['apple'][1],
-               obs['dir'])'''
         
-        obs = (obs['quad_apple'], obs['quad_c_of_m'], obs['dir'])
+        obs = (obs['quad_apple'], 
+               #obs['quad_c_of_m'], 
+               obs['surroundings'][0], obs['surroundings'][1], obs['surroundings'][2]
+              )       
 
         if is_training:
             # with probability epsilon return a random action to explore the environment
@@ -82,16 +81,16 @@ class snakeAgent:
     ):
 
         """Updates the Q-value of an action."""
-        '''obs      = (obs['snake'][0], obs['snake'][1],
-                    obs['apple'][0], obs['apple'][1],
-                    obs['dir'])
-        next_obs = (next_obs['snake'][0], next_obs['snake'][1],
-                    next_obs['apple'][0], next_obs['apple'][1],
-                    next_obs['dir'])'''
         
-        obs = (obs['quad_apple'], obs['quad_c_of_m'], obs['dir'])
+        obs = (obs['quad_apple'], 
+               #obs['quad_c_of_m'], 
+               obs['surroundings'][0], obs['surroundings'][1], obs['surroundings'][2]
+               )
 
-        next_obs = (next_obs['quad_apple'], next_obs['quad_c_of_m'], next_obs['dir'])
+        next_obs = (next_obs['quad_apple'], 
+                    #next_obs['quad_c_of_m'], 
+                    next_obs['surroundings'][0], next_obs['surroundings'][1], next_obs['surroundings'][2]
+                    )
         
         future_q_value = (not terminated) * np.max(self.q_values[next_obs])
         temporal_difference = (

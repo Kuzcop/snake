@@ -39,7 +39,7 @@ def run_A2C(size, is_training = True):
             print("Score: {}".format(env.score))
 
 def run_q_learning(size, is_training = True):
-    n_episodes = 100_000
+    n_episodes = 1_000
     model = 'q_learn'
 
     if is_training:
@@ -47,7 +47,7 @@ def run_q_learning(size, is_training = True):
         learning_rate = 0.01
         start_epsilon = 1.0
         epsilon_decay = start_epsilon / (n_episodes / 2)  # reduce the exploration over time
-        final_epsilon = 0.1
+        final_epsilon = 0.001
         
         render_mode = None
         env = SnakeEnv(render_mode=render_mode, size = size, model=model)
@@ -80,14 +80,14 @@ def run_q_learning(size, is_training = True):
         render_mode = 'human'
         env = SnakeEnv(render_mode=render_mode, size = size, model=model)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)
-        #print(len(agent.q_values))
+        print(len(agent.q_values))
         for _ in range(n_episodes):
             obs, info = env.reset()
             done = False
             while not done:
                 action = agent.get_action(obs, env, is_training)
                 obs, reward, terminated, truncated, info = env.step(action)
-                #print(info) #For debugging
+                #print(info)
                 # update if the environment is done and the current obs
                 done = terminated or truncated
             print("Score: {}".format(env.score))
