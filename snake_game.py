@@ -6,20 +6,18 @@ from snake import snake
 pygame.init()
 clock = pygame.time.Clock()
 
+score = 0
 x_max = 600
 y_max = 600
 length_squares = 20
-line_width = 2
-square_size = math.floor(x_max / length_squares)
+line_width     = 2
+square_size    = math.floor(x_max / length_squares)
 FPS = 10
-
 apple_coordinate = (random.randint(1, length_squares - 1), random.randint(1, length_squares - 1))
 
-size = (x_max, y_max)
-screen = pygame.display.set_mode(size)
-
-snk = snake()
-
+size          = (x_max, y_max)
+screen        = pygame.display.set_mode(size)
+snk           = snake()
 still_running = True
 
 while still_running:
@@ -30,12 +28,11 @@ while still_running:
         if event.type == pygame.QUIT:
             still_running = False
 
-    snk.move()
-
+    snk.move() # Move body, not head
     curr_head_pos = snk.get_head()
+    keys          = pygame.key.get_pressed()
 
-    keys = pygame.key.get_pressed()
-
+    # Update direction of head from key press
     if (keys[pygame.K_UP] and not (snk.get_dir() == 'down')):
         snk.set_dir('up')
     elif (keys[pygame.K_DOWN] and not (snk.get_dir() == 'up')):
@@ -45,6 +42,7 @@ while still_running:
     elif (keys[pygame.K_RIGHT] and not (snk.get_dir() == 'left')):
         snk.set_dir('right')
 
+    # Use snake head direction to update position of head
     if snk.get_dir() == 'up':
         snk.set_head((curr_head_pos[0], curr_head_pos[1] - 1))
     elif snk.get_dir() == 'down':
@@ -58,10 +56,14 @@ while still_running:
 
     # Check to see if snake head is going to hit a wall, end game if true
     if snk.is_crashing_into_wall(length_squares) or snk.is_eating_body():
+        print(score)
         snk.reset()
+        score = 0
 
+    # Check if snake head is in space with apple
     if curr_head_pos == apple_coordinate:
         snk.grow_body()
+        score = score + 1
         while True:
             apple_coordinate = (random.randint(0, length_squares - 1), random.randint(0, length_squares - 1))
             if not snk.is_new_apple_in_body(apple_coordinate):

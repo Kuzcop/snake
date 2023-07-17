@@ -2,9 +2,9 @@ import numpy as np
 
 class snake:
     def __init__(self):
-        self.body = [[(0,0),'right']]
-        self.pos  = [(0,0)]
+        self.body = [[(0,0),'right']] # self.body tracks both the position and direction of each segment of the snake's body
 
+    # Methods to retrieve or set common information about the snake
     def get_head(self):
         return self.body[0][0]
     
@@ -28,6 +28,8 @@ class snake:
             self.body[i][0] = self.body[i - 1][0]
             self.body[i][1] = self.body[i - 1][1]
 
+    # Each body segment tracks the position and the direction the head was moving at a previous space
+    # Grow body appends the new segment behind the tail segment, using the tail direction to position it
     def grow_body(self):
 
         curr_tail_pos, curr_tail_dir = self.get_tail()       
@@ -45,7 +47,6 @@ class snake:
             new_tail_pos = (curr_tail_pos[0] - 1, curr_tail_pos[1])              
 
         self.body.append([new_tail_pos, new_tail_dir])
-        self.pos.append((new_tail_pos))
 
     def is_eating_body(self):
         for i in range(1, self.get_length()):
@@ -61,7 +62,6 @@ class snake:
     
     def reset(self):
         self.body = [[(0,0),'right']]
-        self.pos  = [(0,0)]
 
     def is_crashing_into_wall(self, length_squares):
         curr_head_pos = self.get_head()

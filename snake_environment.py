@@ -22,32 +22,30 @@ class SnakeEnv(gym.Env):
         self.prev_distance_to_apple = self.dist_to_apple()
         self.prev_distance_to_c_of_m = 0
         self.model = model
-        # Observations are dictionaries with the agent's and the target's location.
-        # Each location is encoded as an element of {0, ..., `size`}^2, i.e. MultiDiscrete([size, size]).
+        # Choose Observation space depending on model
         if self.model == 'q_learn':
             self.observation_space = spaces.Dict(
                 {
                     'quad_apple'  : spaces.Discrete(8),
-                    'quad_c_of_m'  : spaces.Discrete(9),
-                    'dir'  : spaces.Discrete(4),
-                    'surroundings' : spaces.Box(0, 2, shape=(3,), dtype=int)
+                    #'quad_c_of_m'  : spaces.Discrete(9),
+                    'surroundings' : spaces.Box(0, 1, shape=(3,), dtype=int)
                 }
             )
         else:
             self.observation_space =  spaces.Dict(
                 {
-                    'snake'       : spaces.Box(-1, self.length_squares, shape=(2,), dtype=int),
-                    'apple'       : spaces.Box(-1, self.length_squares, shape=(2,), dtype=int),
-                    #'quad_apple'  : spaces.Discrete(8),
+                    'quad_apple'  : spaces.Discrete(8),
                     #'quad_c_of_m' : spaces.Discrete(9),
-                    #'dir'         : spaces.Discrete(4)
+                    'surroundings' : spaces.Box(0, 1, shape=(3,), dtype=int)
                 }
             )
+        # Agent is only capable of turning the snake left, continuing straight, or turning right
         self.action_space = spaces.Discrete(3)
         """
-        The following dictionary maps abstract actions from `self.action_space` to 
-        the direction we will walk in if that action is taken.
-        I.e. 0 corresponds to "right", 1 to "up" etc.
+        The dictionary maps actions from `self.action_space` to 
+        the new direction the snake will move in if that action is taken, 
+        depending on the snake's current direction.
+        0 - turning left, 1 - go straight, 2 - turning right
         """
         self._action_to_direction = {
             'up': {
@@ -71,78 +69,59 @@ class SnakeEnv(gym.Env):
                 2: 'down',
             }
         }
-        self.get_direction = {
-            0: 'up',
-            1: 'down',
-            2: 'left',
-            3: 'right'
-        }
-        self._head_direction = {
-            'up':    0,
-            'right': 1,
-            'down':  2,
-            'left':  3 
-        }
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
-        """
-        If human-rendering is used, `self.window` will be a reference
-        to the window that we draw to. `self.clock` will be a clock that is used
-        to ensure that the environment is rendered at the correct framerate in
-        human-mode. They will remain `None` until human-mode is used for the
-        first time.
-        """
-        self.window = None
-        self.clock = None
+        self.window      = None
+        self.clock       = None
 
     def _get_obs(self):
         if self.model == 'q_learn':
             return {
                     "quad_apple" : self.rotate(self.get_quadrant(self.apple)),
-                    'quad_c_of_m': self.get_quadrant(self.snake.get_center_of_mass()),
-                    "dir"  : self._head_direction[self.snake.get_dir()],
+                    #'quad_c_of_m': self.rotate(self.get_quadrant(self.snake.get_center_of_mass())),
                     "surroundings": self.get_surroundings()
                    }
         else:
             return {
-                    "snake": self.snake.get_head(),
-                    "apple": tuple(self.apple),
+                    "quad_apple" : self.rotate(self.get_quadrant(self.apple)),
+                    "surroundings": np.array(self.get_surroundings())
                    }
 
     def _get_info(self):
         return {
             "quad_apple" : self.rotate(self.get_quadrant(self.apple)),
-            #"dir"  : self._head_direction[self.snake.get_dir()],
             "surroundings": self.get_surroundings()
         }
 
+    # Resets the snake to top-left of the play screen, apple's current position and score
     def reset(self, seed=None, options=None):
-        # We need the following line to seed self.np_random
         super().reset(seed=seed)
         self.snake.reset()
         self.reset_apple()
         self.score = 0         
         self.prev_distance_to_apple = math.dist(self.snake.get_head(), self.apple)
-        self.prev_distance_to_c_of_m = 0
+        #self.prev_distance_to_c_of_m = 0
         observation = self._get_obs()
-        info = self._get_info()
+        info        = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
 
         return observation, info
+        
 
     def step(self, action):
-
+        # Use action_to_direction dict to translate agent action
         curr_direction, new_direction = self.snake.get_dir(), action
         new_direction = self._action_to_direction[curr_direction][int(new_direction)]
+        # Move snake body and head
         self.snake.move()
         curr_head_pos = self.snake.get_head()
         self.move_head(new_direction, curr_head_pos)
-        # Check to see if snake head is going to hit a wall, end episode if true
         terminated = False
         reward = 0
 
+        # Check to see if snake head is beyond the walls or in its body, end episode if true
         if self.snake.is_crashing_into_wall(self.length_squares) or self.snake.is_eating_body():
             reward = -500
             terminated = True
@@ -154,16 +133,15 @@ class SnakeEnv(gym.Env):
                 self.reset_apple()
             else:
                 reward = -1
-                
                 '''if self.prev_distance_to_apple > self.dist_to_apple():
-                    reward =  -1'''
+                    reward =  -0.5'''
                 
                 '''if self.snake.get_length() > 10:
                     if self.prev_distance_to_c_of_m < self.dist_to_center_of_mass():
                         reward = -0.5'''
 
         self.prev_distance_to_apple  = self.dist_to_apple()
-        self.prev_distance_to_c_of_m = self.dist_to_center_of_mass()
+        #self.prev_distance_to_c_of_m = self.dist_to_center_of_mass()
         
         if self.render_mode == "human":
             self._render_frame()
@@ -172,6 +150,7 @@ class SnakeEnv(gym.Env):
         info        = self._get_info()
 
         return observation, reward, terminated, False, info
+
 
     def render(self):
         if self.render_mode == "rgb_array":
@@ -200,10 +179,10 @@ class SnakeEnv(gym.Env):
             pygame.draw.rect(self.window, 'green', [x, y, self.square_size, self.square_size])
 
         # Drawing cm
-        cm = self.snake.get_center_of_mass()
+        '''cm = self.snake.get_center_of_mass()
         x = self.square_size*cm[0]
         y = self.square_size*cm[1]
-        pygame.draw.rect(self.window, 'blue', [x, y, self.square_size, self.square_size])
+        pygame.draw.rect(self.window, 'blue', [x, y, self.square_size, self.square_size])'''
 
         # Drawing grid play area
         for i in range(1,self.length_squares):
@@ -213,11 +192,9 @@ class SnakeEnv(gym.Env):
 
         if self.render_mode == "human":
             pygame.display.flip()
-
-            # We need to ensure that human-rendering occurs at the predefined framerate.
             # The following line will automatically add a delay to keep the framerate stable.
             self.clock.tick(self.metadata["render_fps"])
-        else:  # rgb_array
+        else:
             pass
 
     def close(self):
@@ -225,6 +202,7 @@ class SnakeEnv(gym.Env):
             pygame.display.quit()
             pygame.quit()
 
+    # Returns once new apple coordinate no longer is in snake's body
     def reset_apple(self):
          while True:
             self.apple = tuple(self.np_random.integers(0, self.length_squares, size=2, dtype=int))
@@ -273,12 +251,12 @@ class SnakeEnv(gym.Env):
         elif ((target_x - snake_head_x) < 0 ) and ((target_y - snake_head_y) < 0 ):
             return 7
         else:
-            return 8
+            return 8 # Snake is in the same space as target
         
-    
+    # get_quadrant() assumes snake is moving up and finds relative quadrant apple is in to the snake's head
+    # rotate() uses the snake's direction to ensure quadrant number is indifferent to direction
     def rotate(self, quadrant):
         snake_dir = self.snake.get_dir()
-
         if snake_dir == 'right':
             return (quadrant + 6) % 8
         elif snake_dir == 'down':
@@ -287,6 +265,8 @@ class SnakeEnv(gym.Env):
             return (quadrant + 2) % 8
         return quadrant
 
+    # Checks if surrounding blocks are:
+    # 0 - Empty/Apple, 1 - Wall, 2 - Body
     def get_surroundings(self):
         snake_head_pos = np.array(self.snake.get_head())
         snake_head_dir = self.snake.get_dir()
@@ -298,19 +278,16 @@ class SnakeEnv(gym.Env):
                              'left' : snake_head_pos + np.array([-1, 0])
                             }
     
-        spaces_to_look = self._action_to_direction[snake_head_dir].values()
-
+        spaces_to_look     = self._action_to_direction[snake_head_dir].values()
         spaces_around_head = [spaces_around_head[space] for space in spaces_to_look]
                                     
-        
         assert len(spaces_around_head) == 3
 
         for i, space in enumerate(spaces_around_head):
             if space[0] < 0 or space[0] == self.length_squares or space[1] < 0 or space[1] == self.length_squares:
                 hazards[i] = 1
-            elif self.snake.is_new_apple_in_body(space):
-                hazards[i] = 2
-
+            elif self.snake.is_new_apple_in_body(space): # Reusing code for apple in body collision
+                hazards[i] = 1
         return hazards
 
         

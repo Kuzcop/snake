@@ -28,12 +28,10 @@ class snakeAgent:
             final_epsilon: The final epsilon value
             discount_factor: The discount factor for computing the Q-value
         """
-
         global size_of_action_space
         size_of_action_space = env.action_space.n
 
-        self.q_values = defaultdict(create_zeroes_array)
-
+        self.q_values        = defaultdict(create_zeroes_array)
         self.lr              = learning_rate
         self.discount_factor = discount_factor
         self.epsilon         = initial_epsilon
@@ -53,23 +51,19 @@ class snakeAgent:
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
-        
         obs = (obs['quad_apple'], 
                #obs['quad_c_of_m'], 
                obs['surroundings'][0], obs['surroundings'][1], obs['surroundings'][2]
               )       
-
         if is_training:
             # with probability epsilon return a random action to explore the environment
             if np.random.random() < self.epsilon:
                 return env.action_space.sample()
-
             # with probability (1 - epsilon) act greedily (exploit)
             else:
                 return (np.argmax(self.q_values[obs]))
         else:
             return (np.argmax(self.q_values[obs]))
-
 
     def update(
         self,
@@ -79,24 +73,19 @@ class snakeAgent:
         terminated: bool,
         next_obs,
     ):
-
         """Updates the Q-value of an action."""
-        
         obs = (obs['quad_apple'], 
                #obs['quad_c_of_m'], 
                obs['surroundings'][0], obs['surroundings'][1], obs['surroundings'][2]
                )
-
         next_obs = (next_obs['quad_apple'], 
                     #next_obs['quad_c_of_m'], 
                     next_obs['surroundings'][0], next_obs['surroundings'][1], next_obs['surroundings'][2]
                     )
-        
         future_q_value = (not terminated) * np.max(self.q_values[next_obs])
         temporal_difference = (
             reward + self.discount_factor * future_q_value - self.q_values[obs][action]
         )
-
         self.q_values[obs][action] = (
             self.q_values[obs][action] + self.lr * temporal_difference
         )
@@ -104,15 +93,3 @@ class snakeAgent:
 
     def decay_epsilon(self):
         self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
-        
-    def is_move_valid(self, action, dir):
-        if   (action == 'up' and (dir == 'down')):
-            return False
-        elif (action == 'down' and (dir == 'up')):
-            return False
-        elif (action == 'left' and (dir == 'right')):
-            return False
-        elif (action == 'right' and (dir == 'left')):
-            return False
-        else:
-                return True 
