@@ -18,7 +18,6 @@ def run_PPO(size, is_training = True):
     
     if is_training:
         env = SnakeEnv(render_mode = None, size = size, model = model)
-        #vec_env = make_vec_env("CartPole-v1", n_envs=4)
         model = PPO("MultiInputPolicy", env, verbose=1)
         model.learn(total_timesteps=n_episodes)
         model.save("ppo_snake")
@@ -47,7 +46,6 @@ def run_A2C(size, is_training = True):
         model = A2C("MultiInputPolicy", env, verbose=1)
         model.learn(total_timesteps=n_episodes)
         model.save("a2c_snake")
-
     else:
         env = SnakeEnv(render_mode='human', size = size, model=model)
         model = A2C.load("a2c_snake")

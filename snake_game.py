@@ -12,16 +12,14 @@ y_max = 600
 length_squares = 20
 line_width     = 2
 square_size    = math.floor(x_max / length_squares)
-FPS = 10
+FPS = 15
 apple_coordinate = (random.randint(1, length_squares - 1), random.randint(1, length_squares - 1))
-
 size          = (x_max, y_max)
 screen        = pygame.display.set_mode(size)
 snk           = snake()
 still_running = True
 
 while still_running:
-
     clock.tick(FPS)
 
     for event in pygame.event.get():
@@ -56,7 +54,7 @@ while still_running:
 
     # Check to see if snake head is going to hit a wall, end game if true
     if snk.is_crashing_into_wall(length_squares) or snk.is_eating_body():
-        print(score)
+        print("Score: {}".format(score))
         snk.reset()
         score = 0
 
