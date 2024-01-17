@@ -1,7 +1,30 @@
-# snake
+# **Summer 2023 Self-Project into RL (Snake Game)**
 
-## **Summer 2023 Self-Project into RL**
+![](misc/snake_game.gif)
+*Q-learning agent after training for 500 episodes reaching 51 points*
 
+As a way to learn more about RL, I created this project to play the snake game using a simple Q-learning agent, as well as, A2C and PPO agents from Stable-baselines3. Snake game made using pygame library, and environment follows an OpenAI structure to enable use of gymnasium and Stable-baselines3.
+
+## Implementation Overiew
+
+Actions:
+- 0: Turn Left
+- 1: Continue in current direction
+- 2: Turn Right
+
+Reward function:
+- **-500**: If snake agent crashes into any of the four boundaries, or itself
+- **-1**: For each action the agent takes to reach the apple
+- **+100**: For eating the apple
+
+Observations:
+- **0-7**: The quadrant apple position is from snake's head, with south as 0 and increasing CCW to 7 at SW
+- **[0-1, 0-1, 0-1]**: Three element array that contains 0 if there is no wall/body in each adjacent sqaure around the snake's head, 1 if otherwise.
+
+## Installation
+
+
+## Repo Overview
 This repository contains files to play the snake game as yourself, or to let an agent play the game:
 
 - [Snake](snake.py): This file holds the snake class, with attributes describing the position of the body and special methods to check against different collisions.

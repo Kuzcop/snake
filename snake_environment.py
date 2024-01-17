@@ -22,8 +22,8 @@ class SnakeEnv(gym.Env):
         self.snake = snake()
         self.apple = (random.randint(1, self.length_squares - 1), random.randint(1, self.length_squares - 1))
         self.model = model
+        
         # Choose Observation space depending on model
-        # 
         self.observation_space = spaces.Dict(
             {
                 'quad_apple'  : spaces.Discrete(8),
