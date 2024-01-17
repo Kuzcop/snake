@@ -61,7 +61,7 @@ def run_A2C(size, is_training = True):
                 done = terminated or truncated
             print("Score: {}".format(env.score))
 
-def run_q_learning(size, is_pickle = False, is_training = True):
+def run_q_learning(size, is_training = True):
     n_episodes = 500
     model = 'q_learn'
 
@@ -96,13 +96,10 @@ def run_q_learning(size, is_pickle = False, is_training = True):
                 obs = next_obs
             agent.decay_epsilon()
 
-        training_evaluation(env, agent)
-        pickle.dump(agent, open('agent.pkl', 'wb'))
+        #training_evaluation(env, agent)
+        pickle.dump(agent, open('q_learn.pkl', 'wb'))
     else:
-        if is_pickle:
-            agent = pickle.load(open('q_learn.pkl', 'rb'))
-        else:
-            agent = pickle.load(open('agent.pkl', 'rb'))
+        agent = pickle.load(open('q_learn.pkl', 'rb'))
         render_mode = 'human'
         env = SnakeEnv(render_mode=render_mode, size = size, model=model)
         env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=n_episodes)

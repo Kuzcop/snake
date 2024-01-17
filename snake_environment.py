@@ -202,6 +202,7 @@ class SnakeEnv(gym.Env):
             self.snake.set_dir('right')
 
     # With the origin at the snake's head, find which quadrant the target is in
+    # get_quadrant() assumes snake is moving up and finds relative quadrant apple is in to the snake's head
     def get_quadrant(self, target):
         snake_head_x, snake_head_y = self.snake.get_head()
         target_x     , target_y    = target
@@ -225,7 +226,6 @@ class SnakeEnv(gym.Env):
         else:
             return 8 # Snake is in the same space as target
         
-    # get_quadrant() assumes snake is moving up and finds relative quadrant apple is in to the snake's head
     # rotate() uses the snake's direction to ensure quadrant number is indifferent to direction
     def rotate(self, quadrant):
         snake_dir = self.snake.get_dir()
