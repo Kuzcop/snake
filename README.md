@@ -2,7 +2,7 @@
 
 ![](misc/snake_game.gif)
 
-*Q-learning agent after training for 500 episodes reaching 51 points*
+*Q-learning agent reaching 51 points after training for 500 episodes*
 
 As a way to learn more about RL, I created this project to play the snake game using a simple Q-learning agent, as well as, A2C and PPO agents from Stable-baselines3. The snake game is made using the pygame library, and the environment follows an OpenAI structure to enable the use of [gymnasium](https://gymnasium.farama.org/content/basic_usage/) and [Stable-Baselines3](https://stable-baselines3.readthedocs.io/en/master/index.html).
 
