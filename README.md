@@ -19,7 +19,7 @@ Reward function:
 - **+100**: For eating the apple
 
 Observations:
-- **0-7**: The quadrant apple position is from snake's head, with North as 0 and increasing CCW to 7 at NW
+- **0-7**: The quadrant apple position is from snake's head, with North as 0 and increasing CW to 7 at NW
 - **[0-1, 0-1, 0-1]**: Three element array that contains 0 if there is no wall/body in each adjacent sqaure around the snake's head, 1 if otherwise.
 
 ## Installation
